@@ -1,0 +1,26 @@
+{
+  "name": "twitter-media-streamer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node -e \"process.stdout.write('\\033c')\" && node app.js --"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fshy/TwitterMediaStreamer.git"
+  },
+  "author": "Fshy <fshy@arc.moe> (https://arc.moe/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Fshy/TwitterMediaStreamer/issues"
+  },
+  "homepage": "https://github.com/Fshy/TwitterMediaStreamer#readme",
+  "dependencies": {
+    "ansicolors": "^0.3.2",
+    "dotenv": "^5.0.1",
+    "minimist": "^1.2.0",
+    "twit": "^2.2.9"
+  }
+}
