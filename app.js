@@ -1,7 +1,11 @@
-const dotenv = require('dotenv').config()
-const argv   = require('minimist')(process.argv.slice(2))
-const colors = require('ansicolors')
-const Twit   = require('twit')
+const dotenv  = require('dotenv').config()
+const argv    = require('minimist')(process.argv.slice(2))
+const fs      = require('fs')
+const path    = require('path')
+const mkdirp  = require('mkdirp')
+const colors  = require('ansicolors')
+const request = require('request')
+const Twit    = require('twit')
 
 // Pass user as command-line arguments
 let user
@@ -21,8 +25,9 @@ let T = new Twit({
 })
 T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
   if (e) return console.log(e.message)
+  let screenName = data[0].screen_name
   console.log(colors.brightGreen(`> Authenticated API Credentials`))
-  console.log(colors.brightMagenta(`* Target User: ${data[0].name} (@${data[0].screen_name})`))
+  console.log(colors.brightMagenta(`* Target User: ${data[0].name} (@${screenName})`))
   console.log(colors.brightMagenta(`* Target User ID: ${data[0].id_str}`))
   let tweetStream = T.stream('statuses/filter', {follow:data[0].id_str})
 
@@ -32,6 +37,10 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
 
   tweetStream.on('connected', function (response) {
     console.log(colors.brightGreen(`> Connected to Stream`))
+    mkdirp(`media/${screenName}`, function (err) {
+      if (err) return console.log(colors.brightRed(`> ${err}`))
+      console.log(colors.brightGreen(`> Download directory initialized at './media/${screenName}'`))
+    })
   })
 
   tweetStream.on('disconnect', function (message) {
@@ -48,8 +57,18 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
     let mediaArr = tweet.extended_entities.media
     for (var i = 0; i < mediaArr.length; i++) {
       // Twitter Media - Image - Original Size
-      if (mediaArr[i].type==='photo')
+      if (mediaArr[i].type==='photo'){
         console.log(`${colors.brightYellow('* IMG')}: ${mediaArr[i].media_url}:orig`)
+        let filename = mediaArr[i].media_url.split('/').pop()
+        request(`${mediaArr[i].media_url}:orig`)
+          .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
+          .on('close', () => {
+            console.log(colors.brightGreen(`> Saved to '${path.join(__dirname,'media',screenName,filename)}'`))
+          })
+          .on('error', (err) => {
+            console.log(colors.brightRed(`> ${err}`))
+          })
+      }
       // Twitter Media - Video - Highest Bitrate MP4
       else if (mediaArr[i].type==='video' || mediaArr[i].type==='animated_gif'){
         let videoArr = mediaArr[i].video_info.variants
@@ -61,6 +80,15 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
           }
         }
         console.log(`${colors.brightYellow('* MP4')}: ${videoArr[highestBitrate.index].url}`)
+        let filename = videoArr[highestBitrate.index].url.split('/').pop()
+        request(videoArr[highestBitrate.index].url)
+          .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
+          .on('close', () => {
+            console.log(colors.brightGreen(`> Saved to '${path.join(__dirname,'media',screenName,filename)}'`))
+          })
+          .on('error', (err) => {
+            console.log(colors.brightRed(`> ${err}`))
+          })
       }
     }
   })

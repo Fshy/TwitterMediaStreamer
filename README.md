@@ -2,6 +2,8 @@
 
 Monitors a specified twitter user using the streaming API, and stores their media posts in the highest possible resolution (images) & bitrate (video/mp4).
 
+Downloads are stored in individual directories, with the format `./media/{username}`
+
 ### Installation
 ```shell
 $ git clone https://github.com/Fshy/TwitterMediaStreamer
