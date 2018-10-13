@@ -31,6 +31,56 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
   console.log(colors.brightMagenta(`* Target User ID: ${data[0].id_str}`))
   let tweetStream = T.stream('statuses/filter', {follow:data[0].id_str})
 
+  T.get('statuses/user_timeline', {
+    user_id:data[0].id_str,
+    count: 200,
+    exclude_replies: false,
+    include_rts: true
+  }, function (err, data) {
+    for (let i = 0; i < data.length; i++) {
+      const element = data[i]
+      if (element.entities.media) {
+        for (let x = 0; x < element.entities.media.length; x++) {
+          const media = element.entities.media[x];
+           // Twitter Media - Image - Original Size
+          if (media.type==='photo'){
+            console.log(`${colors.brightYellow('* IMG')}: ${media.media_url}:orig`)
+            let filename = media.media_url.split('/').pop()
+            request(`${media.media_url}:orig`)
+              .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
+              .on('close', () => {
+                console.log(colors.brightGreen(`> Saved to '${path.join(__dirname,'media',screenName,filename)}'`))
+              })
+              .on('error', (err) => {
+                console.log(colors.brightRed(`> ${err}`))
+              })
+          }
+          // Twitter Media - Video - Highest Bitrate MP4
+          else if (media.type==='video' || media.type==='animated_gif'){
+            let videoArr = media.video_info.variants
+            let highestBitrate = {index: -1, value: -1}
+            for (var j = 0; j < videoArr.length; j++) {
+              if (videoArr[j].content_type==='video/mp4' && videoArr[j].bitrate>highestBitrate.value){
+                highestBitrate.index = j
+                highestBitrate.value = videoArr[j].bitrate
+              }
+            }
+            console.log(`${colors.brightYellow('* MP4')}: ${videoArr[highestBitrate.index].url}`)
+            let filename = videoArr[highestBitrate.index].url.split('/').pop()
+            request(videoArr[highestBitrate.index].url)
+              .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
+              .on('close', () => {
+                console.log(colors.brightGreen(`> Saved to '${path.join(__dirname,'media',screenName,filename)}'`))
+              })
+              .on('error', (err) => {
+                console.log(colors.brightRed(`> ${err}`))
+              })
+          }
+        }
+      } 
+    }
+  })
+
   tweetStream.on('connect', function (request) {
     console.log(colors.brightBlue(`> Attempting to Connect to Stream`))
   })
