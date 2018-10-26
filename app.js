@@ -30,18 +30,22 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
   console.log(colors.brightMagenta(`* Target User: ${data[0].name} (@${screenName})`))
   console.log(colors.brightMagenta(`* Target User ID: ${data[0].id_str}`))
   let tweetStream = T.stream('statuses/filter', {follow:data[0].id_str})
-
+  mkdirp(`media/${screenName}`, function (err) {
+    if (err) return console.log(colors.brightRed(`> ${err}`))
+    console.log(colors.brightGreen(`> Download directory initialized at './media/${screenName}'`))
+  })
   T.get('statuses/user_timeline', {
     user_id:data[0].id_str,
     count: 200,
     exclude_replies: false,
-    include_rts: true
+    include_rts: true,
+    tweet_mode: 'extended'
   }, function (err, data) {
     for (let i = 0; i < data.length; i++) {
-      const element = data[i]
-      if (element.entities.media) {
-        for (let x = 0; x < element.entities.media.length; x++) {
-          const media = element.entities.media[x];
+      const element = data[i]      
+      if (element.extended_entities.media) {
+        for (let x = 0; x < element.extended_entities.media.length; x++) {
+          const media = element.extended_entities.media[x];          
            // Twitter Media - Image - Original Size
           if (media.type==='photo'){
             console.log(`${colors.brightYellow('* IMG')}: ${media.media_url}:orig`)
@@ -86,11 +90,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
   })
 
   tweetStream.on('connected', function (response) {
-    console.log(colors.brightGreen(`> Connected to Stream`))
-    mkdirp(`media/${screenName}`, function (err) {
-      if (err) return console.log(colors.brightRed(`> ${err}`))
-      console.log(colors.brightGreen(`> Download directory initialized at './media/${screenName}'`))
-    })
+    console.log(colors.brightGreen(`> Connected to Stream`))    
   })
 
   tweetStream.on('disconnect', function (message) {
@@ -109,7 +109,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
       // Twitter Media - Image - Original Size
       if (mediaArr[i].type==='photo'){
         console.log(`${colors.brightYellow('* IMG')}: ${mediaArr[i].media_url}:orig`)
-        let filename = (mediaArr[i].media_url.split('?')[0]).split('/').pop()
+        let filename = mediaArr[i].media_url.split('/').pop()
         request(`${mediaArr[i].media_url}:orig`)
           .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
           .on('close', () => {
@@ -130,7 +130,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
           }
         }
         console.log(`${colors.brightYellow('* MP4')}: ${videoArr[highestBitrate.index].url}`)
-        let filename = videoArr[highestBitrate.index].url.split('/').pop()
+        let filename = (videoArr[highestBitrate.index].url.split('?')[0]).split('/').pop()
         request(videoArr[highestBitrate.index].url)
           .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
           .on('close', () => {
