@@ -66,7 +66,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
               }
             }
             console.log(`${colors.brightYellow('* MP4')}: ${videoArr[highestBitrate.index].url}`)
-            let filename = videoArr[highestBitrate.index].url.split('/').pop()
+            let filename = (videoArr[highestBitrate.index].url.split('?')[0]).split('/').pop()
             request(videoArr[highestBitrate.index].url)
               .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
               .on('close', () => {
@@ -109,7 +109,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
       // Twitter Media - Image - Original Size
       if (mediaArr[i].type==='photo'){
         console.log(`${colors.brightYellow('* IMG')}: ${mediaArr[i].media_url}:orig`)
-        let filename = mediaArr[i].media_url.split('/').pop()
+        let filename = (mediaArr[i].media_url.split('?')[0]).split('/').pop()
         request(`${mediaArr[i].media_url}:orig`)
           .pipe(fs.createWriteStream(path.join(__dirname,'media',screenName,filename)))
           .on('close', () => {
