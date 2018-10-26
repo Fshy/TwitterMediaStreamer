@@ -43,7 +43,7 @@ T.get('users/lookup', {screen_name: `${user}`},  function (e, data, res) {
   }, function (err, data) {
     for (let i = 0; i < data.length; i++) {
       const element = data[i]      
-      if (element.extended_entities.media) {
+      if (element.extended_entities && element.extended_entities.media) {
         for (let x = 0; x < element.extended_entities.media.length; x++) {
           const media = element.extended_entities.media[x];          
            // Twitter Media - Image - Original Size
